@@ -10,8 +10,8 @@ const urlsToCache = [
   '/DCQuoting/js/calculator.js',
   '/DCQuoting/js/report.js',
   '/DCQuoting/js/app.js',
-  '/DCQuoting/images/logo.jpg',
-  '/DCQuoting/images/icon.jpg',
+  '/DCQuoting/images/Logo.jpg',
+  '/DCQuoting/images/Icon.jpg',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 

@@ -67,7 +67,7 @@ class Auth {
                     max-width: 400px;
                     width: 90%;
                 ">
-                    <img src="/DCQuoting/images/logo.jpg" alt="Desire Cabinets" style="
+                    <img src="/DCQuoting/images/Logo.jpg" alt="Desire Cabinets" style="
                         max-width: 250px;
                         margin-bottom: 30px;
                     ">
