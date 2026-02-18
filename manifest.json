@@ -1,0 +1,25 @@
+{
+  "name": "DCQuoting",
+  "short_name": "DCQuoting",
+  "description": "DCQuoting by Desire Cabinets LLC",
+  "start_url": "/DCQuoting/",
+  "scope": "/DCQuoting/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#AB8900",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "images/icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
