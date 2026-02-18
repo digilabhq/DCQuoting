@@ -1,4 +1,4 @@
-// Simple PIN Authentication for DesireCabinets PWA
+// Simple PIN Authentication for DCQuoting PWA
 
 class Auth {
     constructor() {
@@ -16,11 +16,9 @@ class Auth {
             const { timestamp } = JSON.parse(session);
             const now = Date.now();
             
-            // Check if session is still valid (within 24 hours)
             if (now - timestamp < this.sessionDuration) {
                 return true;
             } else {
-                // Session expired
                 this.logout();
                 return false;
             }
@@ -50,75 +48,98 @@ class Auth {
     // Show login screen
     showLoginScreen() {
         document.body.innerHTML = `
-            <div style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-                <div style="
-                    background: white;
-                    padding: 40px;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;1,300;1,400&family=Karla:wght@300;400;500&display=swap');
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { background: #fff; font-family: "Karla", system-ui, sans-serif; }
+                .login-wrap {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    padding: 40px 20px;
+                }
+                .login-box {
                     text-align: center;
-                    max-width: 400px;
-                    width: 90%;
-                ">
-                    <img src="/DCQuoting/images/Logo.jpg" alt="Desire Cabinets" style="
-                        max-width: 250px;
-                        margin-bottom: 30px;
-                    ">
-                    <h2 style="
-                        color: #2C2C2C;
-                        margin-bottom: 20px;
-                        font-size: 24px;
-                        font-weight: 600;
-                    ">Enter PIN to Continue</h2>
-                    <input 
-                        type="password" 
-                        id="pinInput" 
-                        placeholder="Enter PIN"
-                        maxlength="6"
-                        autocomplete="off"
-                        style="
-                            width: 100%;
-                            padding: 15px;
-                            font-size: 18px;
-                            border: 2px solid #E0E0E0;
-                            border-radius: 8px;
-                            text-align: center;
-                            letter-spacing: 4px;
-                            font-weight: 600;
-                            margin-bottom: 20px;
-                            box-sizing: border-box;
-                        "
-                    >
-                    <button 
-                        id="loginBtn"
-                        style="
-                            width: 100%;
-                            padding: 15px;
-                            background: #AB8900;
-                            color: white;
-                            border: none;
-                            border-radius: 8px;
-                            font-size: 16px;
-                            font-weight: 600;
-                            cursor: pointer;
-                            transition: all 0.2s;
-                        "
-                        onmouseover="this.style.background='#8B6F00'"
-                        onmouseout="this.style.background='#AB8900'"
-                    >Unlock</button>
-                    <div id="errorMsg" style="
-                        color: #d32f2f;
-                        margin-top: 15px;
-                        font-size: 14px;
-                        display: none;
-                    ">Incorrect PIN. Please try again.</div>
+                    width: 100%;
+                    max-width: 340px;
+                }
+                .login-logo {
+                    max-width: 210px;
+                    margin: 0 auto 28px;
+                    display: block;
+                }
+                .login-rule {
+                    width: 40px;
+                    height: 1.5px;
+                    background: #AB8900;
+                    margin: 0 auto 22px;
+                }
+                .login-title {
+                    font-family: "Cormorant", Georgia, serif;
+                    font-style: italic;
+                    font-weight: 300;
+                    font-size: 26px;
+                    color: #1C1A15;
+                    margin-bottom: 24px;
+                    line-height: 1.2;
+                }
+                .login-input {
+                    width: 100%;
+                    padding: 14px 12px;
+                    font-size: 22px;
+                    font-family: "Karla", sans-serif;
+                    font-weight: 300;
+                    border: 1px solid #E6E0D4;
+                    background: #fff;
+                    color: #1C1A15;
+                    text-align: center;
+                    letter-spacing: 8px;
+                    margin-bottom: 12px;
+                    outline: none;
+                    border-radius: 0;
+                    -webkit-appearance: none;
+                    transition: border-color 0.2s;
+                }
+                .login-input:focus { border-color: #AB8900; }
+                .login-btn {
+                    width: 100%;
+                    padding: 14px;
+                    background: #AB8900;
+                    color: #fff;
+                    border: 1.5px solid #AB8900;
+                    font-family: "Karla", sans-serif;
+                    font-size: 11px;
+                    font-weight: 500;
+                    letter-spacing: 3px;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border-radius: 0;
+                }
+                .login-btn:hover { background: transparent; color: #AB8900; }
+                .login-error {
+                    color: #AB8900;
+                    margin-top: 14px;
+                    font-size: 12px;
+                    letter-spacing: 0.5px;
+                    display: none;
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-8px); }
+                    75% { transform: translateX(8px); }
+                }
+            </style>
+            <div class="login-wrap">
+                <div class="login-box">
+                    <img src="/DCQuoting/images/Logo.jpg" alt="Desire Cabinets" class="login-logo">
+                    <div class="login-rule"></div>
+                    <h2 class="login-title">Enter PIN to Continue</h2>
+                    <input type="password" id="pinInput" class="login-input"
+                        placeholder="······" maxlength="6" autocomplete="off">
+                    <button id="loginBtn" class="login-btn">Unlock</button>
+                    <div id="errorMsg" class="login-error">Incorrect PIN. Please try again.</div>
                 </div>
             </div>
         `;
@@ -127,48 +148,25 @@ class Auth {
         const loginBtn = document.getElementById('loginBtn');
         const errorMsg = document.getElementById('errorMsg');
 
-        // Focus input
         pinInput.focus();
 
-        // Handle login
         const attemptLogin = () => {
             const pin = pinInput.value.trim();
             if (this.login(pin)) {
-                // Reload page to show main app
                 window.location.reload();
             } else {
                 errorMsg.style.display = 'block';
                 pinInput.value = '';
                 pinInput.focus();
-                
-                // Shake animation
                 pinInput.style.animation = 'shake 0.5s';
-                setTimeout(() => {
-                    pinInput.style.animation = '';
-                }, 500);
+                setTimeout(() => { pinInput.style.animation = ''; }, 500);
             }
         };
 
-        // Click login button
         loginBtn.addEventListener('click', attemptLogin);
-
-        // Press Enter
         pinInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                attemptLogin();
-            }
+            if (e.key === 'Enter') attemptLogin();
         });
-
-        // Add shake animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                75% { transform: translateX(10px); }
-            }
-        `;
-        document.head.appendChild(style);
     }
 
     // Initialize auth check
