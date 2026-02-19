@@ -1,7 +1,7 @@
-// Service Worker for DCQuoting PWA — v3 (cache bust)
+// sw.js — DCQuoting Service Worker v4
 
-const CACHE_NAME = 'dcquoting-v3';
-const urlsToCache = [
+var CACHE_NAME = 'dcquoting-v4';
+var urlsToCache = [
     '/DCQuoting/',
     '/DCQuoting/index.html',
     '/DCQuoting/css/styles.css',
@@ -26,14 +26,10 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('activate', function(event) {
     event.waitUntil(
-        caches.keys().then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.map(function(name) {
-                    if (name !== CACHE_NAME) {
-                        return caches.delete(name);
-                    }
-                })
-            );
+        caches.keys().then(function(names) {
+            return Promise.all(names.map(function(name) {
+                if (name !== CACHE_NAME) return caches.delete(name);
+            }));
         }).then(function() {
             return self.clients.claim();
         })

@@ -1,52 +1,52 @@
 // calculator.js — Desire Cabinets LLC
 
-class ClosetCalculator {
+var ClosetCalculator = (function() {
 
-    constructor() {
+    function ClosetCalculator() {
         this.currentRoomIndex = 0;
         this.estimate = {
-            client: { name: '', address: '', phone: '', email: '' },
-            rooms: [ this.createNewRoom() ],
-            taxRate: 0,
-            discountType: 'percent',
+            client:        { name: '', address: '', phone: '', email: '' },
+            rooms:         [ this.createNewRoom() ],
+            taxRate:       0,
+            discountType:  'percent',
             discountValue: 0,
-            revision: 0,
-            quoteNumber: this.generateQuoteNumber(),
-            date: new Date().toISOString().split('T')[0]
+            revision:      0,
+            quoteNumber:   this.generateQuoteNumber(''),
+            date:          new Date().toISOString().split('T')[0]
         };
     }
 
-    createNewRoom() {
+    ClosetCalculator.prototype.createNewRoom = function() {
         return {
-            type: 'room',
-            name: '',
+            type:   'room',
+            name:   '',
             closet: {
-                closetType: 'walk-in',
-                linearFeet: 0,
-                depth: 16,
-                height: 96,
-                material: 'white',
-                pullsHandles: 'black-style-1',
-                hangingRods: 'black-style-1',
-                mounting: 'floor',
+                closetType:    'walk-in',
+                linearFeet:    0,
+                depth:         16,
+                height:        96,
+                material:      'white',
+                pullsHandles:  'black-style-1',
+                hangingRods:   'black-style-1',
+                mounting:      'floor',
                 drawingNumber: ''
             },
             addons: {},
-            notes: ''
+            notes:  ''
         };
-    }
+    };
 
-    createNewCustomItem() {
+    ClosetCalculator.prototype.createNewCustomItem = function() {
         return {
-            type: 'custom',
-            name: '',
+            type:        'custom',
+            name:        '',
             description: '',
-            price: 0,
-            notes: ''
+            price:       0,
+            notes:       ''
         };
-    }
+    };
 
-    generateQuoteNumber(clientName) {
+    ClosetCalculator.prototype.generateQuoteNumber = function(clientName) {
         var now = new Date();
         var yy  = String(now.getFullYear()).slice(-2);
         var mm  = String(now.getMonth() + 1).padStart(2, '0');
@@ -60,29 +60,29 @@ class ClosetCalculator {
             if (initials) num = num + '-' + initials;
         }
         return num;
-    }
+    };
 
-    getCurrentRoom() {
+    ClosetCalculator.prototype.getCurrentRoom = function() {
         return this.estimate.rooms[this.currentRoomIndex];
-    }
+    };
 
-    getRooms() {
+    ClosetCalculator.prototype.getRooms = function() {
         return this.estimate.rooms;
-    }
+    };
 
-    addRoom() {
+    ClosetCalculator.prototype.addRoom = function() {
         this.estimate.rooms.push(this.createNewRoom());
         this.currentRoomIndex = this.estimate.rooms.length - 1;
         return this.currentRoomIndex;
-    }
+    };
 
-    addCustomItem() {
+    ClosetCalculator.prototype.addCustomItem = function() {
         this.estimate.rooms.push(this.createNewCustomItem());
         this.currentRoomIndex = this.estimate.rooms.length - 1;
         return this.currentRoomIndex;
-    }
+    };
 
-    removeRoom(index) {
+    ClosetCalculator.prototype.removeRoom = function(index) {
         if (this.estimate.rooms.length > 1) {
             this.estimate.rooms.splice(index, 1);
             if (this.currentRoomIndex >= this.estimate.rooms.length) {
@@ -91,23 +91,23 @@ class ClosetCalculator {
             return true;
         }
         return false;
-    }
+    };
 
-    switchRoom(index) {
+    ClosetCalculator.prototype.switchRoom = function(index) {
         if (index >= 0 && index < this.estimate.rooms.length) {
             this.currentRoomIndex = index;
             return true;
         }
         return false;
-    }
+    };
 
-    calculateRoomBase(room) {
+    ClosetCalculator.prototype.calculateRoomBase = function(room) {
         var feet = parseFloat(room.closet.linearFeet) || 0;
         var ppf  = PRICING_CONFIG.baseSystem[room.closet.depth] || 0;
         return feet * ppf;
-    }
+    };
 
-    calculateRoomMaterialUpcharge(room) {
+    ClosetCalculator.prototype.calculateRoomMaterialUpcharge = function(room) {
         var feet = parseFloat(room.closet.linearFeet) || 0;
         var mat  = null;
         for (var i = 0; i < PRICING_CONFIG.materials.length; i++) {
@@ -117,9 +117,9 @@ class ClosetCalculator {
             }
         }
         return feet * (mat ? mat.upcharge : 0);
-    }
+    };
 
-    calculateRoomAddons(room) {
+    ClosetCalculator.prototype.calculateRoomAddons = function(room) {
         var total = 0;
         var keys  = Object.keys(room.addons);
         for (var i = 0; i < keys.length; i++) {
@@ -133,36 +133,39 @@ class ClosetCalculator {
             }
         }
         return total;
-    }
+    };
 
-    calculateRoomTotal(room) {
+    ClosetCalculator.prototype.calculateRoomTotal = function(room) {
         if (room.type === 'custom') {
-            return { base: 0, materialUpcharge: 0, addons: 0, total: parseFloat(room.price) || 0 };
+            var customPrice = parseFloat(room.price) || 0;
+            return { base: 0, materialUpcharge: 0, addons: 0, customPrice: customPrice, total: customPrice };
         }
         var base             = this.calculateRoomBase(room);
         var materialUpcharge = this.calculateRoomMaterialUpcharge(room);
         var addons           = this.calculateRoomAddons(room);
-        return { base: base, materialUpcharge: materialUpcharge, addons: addons, total: base + materialUpcharge + addons };
-    }
+        return { base: base, materialUpcharge: materialUpcharge, addons: addons, customPrice: 0, total: base + materialUpcharge + addons };
+    };
 
-    calculateTotal() {
+    ClosetCalculator.prototype.calculateTotal = function() {
+        var self          = this;
         var totalBase     = 0;
         var totalMaterial = 0;
         var totalAddons   = 0;
-        var self          = this;
+        var totalCustom   = 0;
 
-        var totalCustom = 0;
         var roomTotals = this.estimate.rooms.map(function(room) {
             var r = self.calculateRoomTotal(room);
             totalBase     += r.base;
             totalMaterial += r.materialUpcharge;
             totalAddons   += r.addons;
-            if (room.type === 'custom') totalCustom += r.total;
+            totalCustom   += r.customPrice;
             return r;
         });
 
+        // subtotal = ALL rooms combined (closet + addons + custom items)
         var subtotal      = totalBase + totalMaterial + totalAddons + totalCustom;
-        var discountValue = parseFloat(this.estimate.discountValue) || 0;
+
+        var discountValue  = parseFloat(this.estimate.discountValue) || 0;
         var discountAmount = 0;
         if (discountValue > 0) {
             if (this.estimate.discountType === 'percent') {
@@ -171,25 +174,27 @@ class ClosetCalculator {
                 discountAmount = discountValue;
             }
         }
+
         var afterDiscount = subtotal - discountAmount;
         var taxRate       = parseFloat(this.estimate.taxRate) || 0;
         var taxAmount     = afterDiscount * (taxRate / 100);
         var total         = afterDiscount + taxAmount;
 
         return {
-            base: totalBase,
+            base:             totalBase,
             materialUpcharge: totalMaterial,
-            addons: totalAddons,
-            subtotal: subtotal,
-            discount: discountAmount,
-            afterDiscount: afterDiscount,
-            tax: taxAmount,
-            total: total,
-            rooms: roomTotals
+            addons:           totalAddons,
+            custom:           totalCustom,
+            subtotal:         subtotal,
+            discount:         discountAmount,
+            afterDiscount:    afterDiscount,
+            tax:              taxAmount,
+            total:            total,
+            rooms:            roomTotals
         };
-    }
+    };
 
-    getActiveAddons(room) {
+    ClosetCalculator.prototype.getActiveAddons = function(room) {
         var active = [];
         var keys   = Object.keys(room.addons);
         for (var i = 0; i < keys.length; i++) {
@@ -203,9 +208,9 @@ class ClosetCalculator {
             }
         }
         return active;
-    }
+    };
 
-    generateRoomDescription(room) {
+    ClosetCalculator.prototype.generateRoomDescription = function(room) {
         if (room.type === 'custom') {
             return {
                 title:   room.name || 'Custom Item',
@@ -241,30 +246,22 @@ class ClosetCalculator {
         var activeAddons = this.getActiveAddons(room);
 
         var details = [ c.depth + '" deep x ' + c.height + '" high' ];
-
         if (c.drawingNumber && c.drawingNumber.trim()) {
             details.push('Drawing # ' + c.drawingNumber.trim());
         }
-
         details.push('3/4" ' + materialName + ' melamine finish');
         details.push('Pulls/Handles: ' + pullsName);
         details.push('Hanging Rod: ' + rodsName);
-
         for (var a = 0; a < activeAddons.length; a++) {
             var addon = activeAddons[a];
-            if (addon.unit === 'per linear foot') {
-                details.push(addon.name + ' (' + addon.quantity + ' LF)');
-            } else {
-                details.push(addon.name + ' (' + addon.quantity + ')');
-            }
+            details.push(addon.name + ' (' + addon.quantity + (addon.unit === 'per linear foot' ? ' LF' : '') + ')');
         }
-
         details.push('Installation and delivery included');
 
         return { title: title, details: details };
-    }
+    };
 
-    getEstimate() {
+    ClosetCalculator.prototype.getEstimate = function() {
         return {
             client:           this.estimate.client,
             rooms:            this.estimate.rooms,
@@ -278,57 +275,53 @@ class ClosetCalculator {
             currentRoom:      this.getCurrentRoom(),
             currentRoomIndex: this.currentRoomIndex
         };
-    }
+    };
 
-    updateClient(field, value)     { this.estimate.client[field] = value; }
-    updateCloset(field, value)     { this.getCurrentRoom().closet[field] = value; }
-    updateRoomName(name)           { this.getCurrentRoom().name = name; }
-    updateRoomNotes(notes)         { this.getCurrentRoom().notes = notes; }
-    updateTaxRate(rate)            { this.estimate.taxRate = parseFloat(rate) || 0; }
-    updateRevision(val)            { this.estimate.revision = parseInt(val) || 0; }
+    ClosetCalculator.prototype.updateClient        = function(field, value) { this.estimate.client[field] = value; };
+    ClosetCalculator.prototype.updateCloset        = function(field, value) { this.getCurrentRoom().closet[field] = value; };
+    ClosetCalculator.prototype.updateRoomName      = function(name)         { this.getCurrentRoom().name = name; };
+    ClosetCalculator.prototype.updateRoomNotes     = function(notes)        { this.getCurrentRoom().notes = notes; };
+    ClosetCalculator.prototype.updateTaxRate       = function(rate)         { this.estimate.taxRate = parseFloat(rate) || 0; };
+    ClosetCalculator.prototype.updateRevision      = function(val)          { this.estimate.revision = parseInt(val) || 0; };
 
-    updateAddon(key, enabled, qty) {
+    ClosetCalculator.prototype.updateAddon = function(key, enabled, qty) {
         this.getCurrentRoom().addons[key] = { enabled: enabled, quantity: qty };
-    }
+    };
 
-    updateDiscount(type, value) {
+    ClosetCalculator.prototype.updateDiscount = function(type, value) {
         this.estimate.discountType  = type;
         this.estimate.discountValue = parseFloat(value) || 0;
-    }
+    };
 
-    updateDrawingNumber(value) {
+    ClosetCalculator.prototype.updateDrawingNumber = function(value) {
         var room = this.getCurrentRoom();
-        if (room.type === 'room') {
-            room.closet.drawingNumber = value;
-        }
-    }
+        if (room.type === 'room') { room.closet.drawingNumber = value; }
+    };
 
-    updateCustomItem(field, value) {
+    ClosetCalculator.prototype.updateCustomItem = function(field, value) {
         var room = this.getCurrentRoom();
-        if (room.type === 'custom') {
-            room[field] = value;
-        }
-    }
+        if (room.type === 'custom') { room[field] = value; }
+    };
 
-    reset() {
+    ClosetCalculator.prototype.reset = function() {
         this.currentRoomIndex = 0;
         this.estimate = {
-            client: { name: '', address: '', phone: '', email: '' },
-            rooms: [ this.createNewRoom() ],
-            taxRate: 0,
-            discountType: 'percent',
+            client:        { name: '', address: '', phone: '', email: '' },
+            rooms:         [ this.createNewRoom() ],
+            taxRate:       0,
+            discountType:  'percent',
             discountValue: 0,
-            revision: 0,
-            quoteNumber: this.generateQuoteNumber(),
-            date: new Date().toISOString().split('T')[0]
+            revision:      0,
+            quoteNumber:   this.generateQuoteNumber(''),
+            date:          new Date().toISOString().split('T')[0]
         };
-    }
+    };
 
-    loadFromStorage() {
+    ClosetCalculator.prototype.loadFromStorage = function() {
         var saved = localStorage.getItem('dcquoting-estimate');
         if (!saved) return;
         try {
-            var data = JSON.parse(saved);
+            var data     = JSON.parse(saved);
             this.estimate = data;
             if (!this.estimate.rooms || this.estimate.rooms.length === 0) {
                 this.estimate.rooms = [ this.createNewRoom() ];
@@ -340,8 +333,12 @@ class ClosetCalculator {
                     if (!room.closet)                  room.closet               = self.createNewRoom().closet;
                     if (!room.closet.pullsHandles)     room.closet.pullsHandles  = 'black-style-1';
                     if (!room.closet.hangingRods)      room.closet.hangingRods   = 'black-style-1';
-                    if (!room.closet.drawingNumber)    room.closet.drawingNumber = '';
+                    if (room.closet.drawingNumber === undefined) room.closet.drawingNumber = '';
                     delete room.closet.hardwareFinish;
+                }
+                if (room.type === 'custom') {
+                    if (room.price === undefined) room.price = 0;
+                    if (!room.description)        room.description = '';
                 }
                 return room;
             });
@@ -349,9 +346,11 @@ class ClosetCalculator {
         } catch (e) {
             console.error('Error loading estimate:', e);
         }
-    }
+    };
 
-    saveToStorage() {
+    ClosetCalculator.prototype.saveToStorage = function() {
         localStorage.setItem('dcquoting-estimate', JSON.stringify(this.estimate));
-    }
-}
+    };
+
+    return ClosetCalculator;
+})();
