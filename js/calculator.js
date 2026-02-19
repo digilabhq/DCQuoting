@@ -300,6 +300,17 @@ class ClosetCalculator {
     }
 }
 
+    // Get full estimate (used by ReportGenerator)
+    getEstimate() {
+        return {
+            ...this.estimate,
+            calculations: this.calculateTotal(),
+            currentRoom: this.getCurrentRoom(),
+            currentRoomIndex: this.currentRoomIndex
+        };
+    }
+
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ClosetCalculator;
 }
