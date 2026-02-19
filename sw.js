@@ -1,6 +1,6 @@
 // Service Worker for DCQuoting PWA
 
-const CACHE_NAME = 'dcquoting-v1';
+const CACHE_NAME = 'dcquoting-v2';
 const urlsToCache = [
   '/DCQuoting/',
   '/DCQuoting/index.html',
