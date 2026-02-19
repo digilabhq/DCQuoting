@@ -151,15 +151,17 @@ class ClosetCalculator {
         var totalAddons   = 0;
         var self          = this;
 
+        var totalCustom = 0;
         var roomTotals = this.estimate.rooms.map(function(room) {
             var r = self.calculateRoomTotal(room);
             totalBase     += r.base;
             totalMaterial += r.materialUpcharge;
             totalAddons   += r.addons;
+            if (room.type === 'custom') totalCustom += r.total;
             return r;
         });
 
-        var subtotal      = totalBase + totalMaterial + totalAddons;
+        var subtotal      = totalBase + totalMaterial + totalAddons + totalCustom;
         var discountValue = parseFloat(this.estimate.discountValue) || 0;
         var discountAmount = 0;
         if (discountValue > 0) {
