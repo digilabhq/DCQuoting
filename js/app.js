@@ -113,6 +113,7 @@ class ClosetEstimatorApp {
     renderPullsSelector() {
         const container = document.getElementById('pullsSelector');
         const currentRoom = this.calculator.getCurrentRoom();
+        if (!currentRoom.closet) return;
         container.innerHTML = PRICING_CONFIG.pullsHandles.map(h => `
             <button class="selection-btn ${currentRoom.closet.pullsHandles === h.id ? 'selected' : ''}"
                  onclick="app.selectPulls('${h.id}')">
@@ -124,6 +125,7 @@ class ClosetEstimatorApp {
     renderRodsSelector() {
         const container = document.getElementById('rodsSelector');
         const currentRoom = this.calculator.getCurrentRoom();
+        if (!currentRoom.closet) return;
         container.innerHTML = PRICING_CONFIG.hangingRods.map(h => `
             <button class="selection-btn ${currentRoom.closet.hangingRods === h.id ? 'selected' : ''}"
                  onclick="app.selectRods('${h.id}')">

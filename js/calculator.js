@@ -369,6 +369,18 @@ class ClosetCalculator {
                 if (!this.estimate.rooms || this.estimate.rooms.length === 0) {
                     this.estimate.rooms = [this.createNewRoom()];
                 }
+                // Migrate old rooms missing new fields
+                this.estimate.rooms = this.estimate.rooms.map(room => {
+                    if (!room.type) room.type = 'room';
+                    if (room.type === 'room' && room.closet) {
+                        if (!room.closet.pullsHandles) room.closet.pullsHandles = 'black-style-1';
+                        if (!room.closet.hangingRods)  room.closet.hangingRods  = 'black-style-1';
+                        if (!room.closet.drawingNumber) room.closet.drawingNumber = '';
+                        // Remove old hardwareFinish if present
+                        delete room.closet.hardwareFinish;
+                    }
+                    return room;
+                });
                 this.currentRoomIndex = 0;
             } catch (e) {
                 console.error('Error loading saved estimate:', e);
