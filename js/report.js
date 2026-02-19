@@ -167,14 +167,13 @@ class ReportGenerator {
 
         // ── Totals ─────────────────────────────────────────────────────
         if (y > 235) { doc.addPage(); y = 15; }
-        y += 3;
 
-        // Thank you — gold italic
-        doc.setFont(undefined, 'italic');
-        doc.setFontSize(9);
-        doc.setTextColor(...gold);
-        doc.text('Thank you for your business!', left, y);
-        y += 8;
+        // Separator line before totals
+        y += 6;
+        doc.setDrawColor(...lineclr);
+        doc.setLineWidth(0.3);
+        doc.line(left, y, right, y);
+        y += 10;
 
         // Subtotal
         doc.setFont(undefined, 'normal');
