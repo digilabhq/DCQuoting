@@ -295,11 +295,8 @@
     <script src="js/app.js"></script>
     
     <script>
-        // Check authentication before initializing app
-        if (auth.init()) {
-            // Only initialize app if authenticated
-            const app = new ClosetEstimatorApp();
-        }
+        // app.js handles initialization via DOMContentLoaded
+        // auth check is done inside app.js
     </script>
     
     <!-- Service Worker Registration -->

@@ -1,5 +1,4 @@
-// Pricing Configuration - Desire Cabinets LLC
-// Last Updated: February 2026
+// config.js — Pricing Configuration for Desire Cabinets LLC
 
 const PRICING_CONFIG = {
 
@@ -11,16 +10,16 @@ const PRICING_CONFIG = {
     },
 
     addons: {
-        drawers:          { name: "Drawers",                               price: 75,  unit: "each"           },
-        colorChangingLEDs:{ name: "LED Lighting",                          price: 75,  unit: "per linear foot" },
-        shakerStyle:      { name: "Shaker Style Doors/Drawers",            price: 75,  unit: "per door/drawer" },
-        laminatedTops:    { name: 'Laminated Tops (25" deep)',             price: 50,  unit: "per linear foot" },
-        floatingShelves:  { name: 'Floating Shelves (3/4" thick, 12" deep)',price: 25, unit: "per linear foot" },
-        hamper:           { name: "Hamper",                                price: 175, unit: "each"           },
-        mirror:           { name: "Mirror",                                price: 150, unit: "each"           },
-        doors:            { name: "Doors",                                 price: 45,  unit: "each"           },
-        ssTops:           { name: 'SS Tops (25" deep)',                    price: 100, unit: "per linear foot" },
-        removalDisposal:  { name: "Removal of Old System & Trash Disposal",price: 150, unit: "each"           }
+        drawers:           { name: "Drawers",                                price: 75,  unit: "each"            },
+        colorChangingLEDs: { name: "LED Lighting",                           price: 75,  unit: "per linear foot"  },
+        shakerStyle:       { name: "Shaker Style Doors/Drawers",             price: 75,  unit: "per door/drawer"  },
+        laminatedTops:     { name: "Laminated Tops (25\" deep)",             price: 50,  unit: "per linear foot"  },
+        floatingShelves:   { name: "Floating Shelves (3/4\" thick, 12\" deep)", price: 25, unit: "per linear foot" },
+        hamper:            { name: "Hamper",                                 price: 175, unit: "each"             },
+        mirror:            { name: "Mirror",                                 price: 150, unit: "each"             },
+        doors:             { name: "Doors",                                  price: 45,  unit: "each"             },
+        ssTops:            { name: "SS Tops (25\" deep)",                    price: 100, unit: "per linear foot"  },
+        removalDisposal:   { name: "Removal of Old System & Trash Disposal", price: 150, unit: "each"             }
     },
 
     pullsHandles: [
@@ -65,7 +64,3 @@ const PRICING_CONFIG = {
         { id: "wall",  name: "Wall Mounted"  }
     ]
 };
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PRICING_CONFIG;
-}
