@@ -26,17 +26,30 @@ class ClosetCalculator {
     createNewRoom() {
         return {
             name: '',  // e.g., "Master Bedroom", "Walk-in Closet", etc.
+            type: 'room',  // 'room' or 'custom'
             closet: {
                 closetType: 'walk-in',  // 'walk-in' or 'reach-in'
                 linearFeet: 0,
                 depth: 16,
                 height: 96,
                 material: 'white',
-                hardwareFinish: 'black',
-                mounting: 'floor'
+                pullsHandles: 'black-style-1',
+                hangingRods: 'black-style-1',
+                mounting: 'floor',
+                drawingNumber: ''
             },
             addons: {},
             notes: ''  // Room-specific notes
+        };
+    }
+
+    createNewCustomItem() {
+        return {
+            type: 'custom',
+            name: '',
+            description: '',
+            price: 0,
+            notes: ''
         };
     }
 
@@ -76,6 +89,13 @@ class ClosetCalculator {
     // Add a new room
     addRoom() {
         this.estimate.rooms.push(this.createNewRoom());
+        this.currentRoomIndex = this.estimate.rooms.length - 1;
+        return this.currentRoomIndex;
+    }
+
+    // Add a custom line item
+    addCustomItem() {
+        this.estimate.rooms.push(this.createNewCustomItem());
         this.currentRoomIndex = this.estimate.rooms.length - 1;
         return this.currentRoomIndex;
     }
@@ -135,6 +155,10 @@ class ClosetCalculator {
 
     // Calculate total for a specific room
     calculateRoomTotal(room) {
+        if (room.type === 'custom') {
+            const price = parseFloat(room.price) || 0;
+            return { base: 0, materialUpcharge: 0, addons: 0, total: price };
+        }
         const base = this.calculateRoomBase(room);
         const materialUpcharge = this.calculateRoomMaterialUpcharge(room);
         const addons = this.calculateRoomAddons(room);
@@ -213,23 +237,38 @@ class ClosetCalculator {
         return active;
     }
 
-    // Generate description for a specific room
+    // Generate description for a specific room or custom item
     generateRoomDescription(room) {
-        const { closetType, linearFeet, depth, height, material, hardwareFinish, mounting } = room.closet;
+        // Custom item — just description, no specs
+        if (room.type === 'custom') {
+            return {
+                title: room.name || 'Custom Item',
+                details: room.description ? [room.description] : []
+            };
+        }
+
+        const { closetType, linearFeet, depth, height, material, pullsHandles, hangingRods, mounting, drawingNumber } = room.closet;
         const materialName = PRICING_CONFIG.materials.find(m => m.id === material)?.name || 'White';
-        const hardwareName = PRICING_CONFIG.hardwareFinishes.find(h => h.id === hardwareFinish)?.name || 'Black';
+        const pullsName = PRICING_CONFIG.pullsHandles.find(h => h.id === pullsHandles)?.name || 'Black · Style 1';
+        const rodsName = PRICING_CONFIG.hangingRods.find(h => h.id === hangingRods)?.name || 'Black · Style 1';
         const closetTypeName = closetType === 'walk-in' ? 'Walk-In' : 'Reach-In';
-        
+
         const activeAddons = this.getActiveAddons(room);
 
-        // Room name with closet type (no "Closet" word)
         let title = room.name ? `${room.name} - ${closetTypeName}` : closetTypeName;
-        
-        // Build details array - using "deep" and "high"
+
         let details = [
-            `${linearFeet} linear feet × ${depth}" deep × ${height}" high`,
+            `${depth}" deep × ${height}" high`,
+        ];
+
+        if (drawingNumber && drawingNumber.trim()) {
+            details.push(`Drawing # ${drawingNumber.trim()}`);
+        }
+
+        details = details.concat([
             `3/4" ${materialName} melamine finish`,
-            `${hardwareName} hardware (Pulls & Rod)`,
+            `Pulls/Handles: ${pullsName}`,
+            `Hanging Rod: ${rodsName}`,
             ...activeAddons.map(addon => {
                 if (addon.unit === 'per linear foot') {
                     return `${addon.name} (${addon.quantity} LF)`;
@@ -238,12 +277,24 @@ class ClosetCalculator {
                 }
             }),
             'Installation and delivery included'
-        ];
-        
-        return {
-            title,
-            details
-        };
+        ]);
+
+        return { title, details };
+    }
+
+    // Update drawing number for current room
+    updateDrawingNumber(value) {
+        if (this.getCurrentRoom().type === 'room') {
+            this.getCurrentRoom().closet.drawingNumber = value;
+        }
+    }
+
+    // Update custom item fields
+    updateCustomItem(field, value) {
+        const room = this.getCurrentRoom();
+        if (room.type === 'custom') {
+            room[field] = value;
+        }
     }
 
     // Update client info

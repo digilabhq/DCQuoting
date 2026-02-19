@@ -131,6 +131,18 @@ button, input, textarea, select {
     color: inherit;
 }
 
+.room-tab.custom-tab {
+    border-style: dashed;
+    color: var(--muted);
+}
+
+.room-tab.custom-tab.active {
+    border-color: var(--gold);
+    border-style: dashed;
+    background: var(--tint);
+    color: var(--ink);
+}
+
 .room-tab-remove {
     display: flex;
     align-items: center;

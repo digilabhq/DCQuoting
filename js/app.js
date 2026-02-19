@@ -16,12 +16,20 @@ class ClosetEstimatorApp {
         this.renderRoomTabs();
         
         // Render all UI components
-        this.renderClosetTypeSelector();
-        this.renderDepthSelector();
-        this.renderMaterialSelector();
-        this.renderHardwareSelector();
-        this.renderMountingSelector();
-        this.renderAddonList();
+        const firstRoom = this.calculator.getCurrentRoom();
+        if (firstRoom.type === 'custom') {
+            this.showCustomPanel();
+            this.loadCustomItemValues();
+        } else {
+            this.showClosetPanel();
+            this.renderClosetTypeSelector();
+            this.renderDepthSelector();
+            this.renderMaterialSelector();
+            this.renderPullsSelector();
+            this.renderRodsSelector();
+            this.renderMountingSelector();
+            this.renderAddonList();
+        }
         
         // Load saved values into form
         this.loadFormValues();
@@ -40,16 +48,22 @@ class ClosetEstimatorApp {
         const container = document.getElementById('roomTabs');
         const rooms = this.calculator.getRooms();
         
-        container.innerHTML = rooms.map((room, index) => `
-            <button class="room-tab ${index === this.calculator.currentRoomIndex ? 'active' : ''}" 
-                    onclick="app.switchToRoom(${index})">
-                <span class="room-tab-name">${room.name || `Room ${index + 1}`}</span>
-                ${rooms.length > 1 ? `<span class="room-tab-remove" onclick="event.stopPropagation(); app.deleteRoom(${index})">×</span>` : ''}
-            </button>
-        `).join('') + `
-            <button class="room-tab-add" onclick="app.addNewRoom()">
-                + Add Room
-            </button>
+        container.innerHTML = rooms.map((room, index) => {
+            const isCustom = room.type === 'custom';
+            const label = isCustom
+                ? (room.name || `Item ${index + 1}`)
+                : (room.name || `Room ${index + 1}`);
+            const prefix = isCustom ? '✦ ' : '';
+            return `
+                <button class="room-tab ${index === this.calculator.currentRoomIndex ? 'active' : ''} ${isCustom ? 'custom-tab' : ''}"
+                        onclick="app.switchToRoom(${index})">
+                    <span class="room-tab-name">${prefix}${label}</span>
+                    ${rooms.length > 1 ? `<span class="room-tab-remove" onclick="event.stopPropagation(); app.deleteRoom(${index})">×</span>` : ''}
+                </button>
+            `;
+        }).join('') + `
+            <button class="room-tab-add" onclick="app.addNewRoom()">+ Add Room</button>
+            <button class="room-tab-add" onclick="app.addNewCustomItem()" style="border-style:dashed; opacity:0.8;">✦ Add Item</button>
         `;
     }
 
@@ -96,14 +110,24 @@ class ClosetEstimatorApp {
         `).join('');
     }
 
-    renderHardwareSelector() {
-        const container = document.getElementById('hardwareSelector');
+    renderPullsSelector() {
+        const container = document.getElementById('pullsSelector');
         const currentRoom = this.calculator.getCurrentRoom();
-        
-        container.innerHTML = PRICING_CONFIG.hardwareFinishes.map(hardware => `
-            <button class="selection-btn ${currentRoom.closet.hardwareFinish === hardware.id ? 'selected' : ''}" 
-                 onclick="app.selectHardware('${hardware.id}')">
-                ${hardware.name}
+        container.innerHTML = PRICING_CONFIG.pullsHandles.map(h => `
+            <button class="selection-btn ${currentRoom.closet.pullsHandles === h.id ? 'selected' : ''}"
+                 onclick="app.selectPulls('${h.id}')">
+                ${h.name}
+            </button>
+        `).join('');
+    }
+
+    renderRodsSelector() {
+        const container = document.getElementById('rodsSelector');
+        const currentRoom = this.calculator.getCurrentRoom();
+        container.innerHTML = PRICING_CONFIG.hangingRods.map(h => `
+            <button class="selection-btn ${currentRoom.closet.hangingRods === h.id ? 'selected' : ''}"
+                 onclick="app.selectRods('${h.id}')">
+                ${h.name}
             </button>
         `).join('');
     }
@@ -162,6 +186,9 @@ class ClosetEstimatorApp {
         document.getElementById('linearFeet').value = currentRoom.closet.linearFeet || 0;
         document.getElementById('height').value = currentRoom.closet.height || 96;
         
+        // Drawing number
+        document.getElementById('drawingNumber').value = currentRoom.closet?.drawingNumber || '';
+
         // Room notes
         document.getElementById('roomNotes').value = currentRoom.notes || '';
         
@@ -184,6 +211,12 @@ class ClosetEstimatorApp {
         this.switchToRoom(this.calculator.currentRoomIndex);
     }
 
+    addNewCustomItem() {
+        this.calculator.addCustomItem();
+        this.renderRoomTabs();
+        this.switchToRoom(this.calculator.currentRoomIndex);
+    }
+
     deleteRoom(index) {
         if (confirm('Are you sure you want to delete this room?')) {
             if (this.calculator.removeRoom(index)) {
@@ -195,16 +228,47 @@ class ClosetEstimatorApp {
 
     switchToRoom(index) {
         this.calculator.switchRoom(index);
-        
-        // Re-render all selectors for new room
+        const room = this.calculator.getCurrentRoom();
+
         this.renderRoomTabs();
-        this.renderClosetTypeSelector();
-        this.renderDepthSelector();
-        this.renderMaterialSelector();
-        this.renderHardwareSelector();
-        this.renderMountingSelector();
-        this.renderAddonList();
-        this.loadFormValues();
+
+        if (room.type === 'custom') {
+            this.showCustomPanel();
+            this.loadCustomItemValues();
+        } else {
+            this.showClosetPanel();
+            this.renderClosetTypeSelector();
+            this.renderDepthSelector();
+            this.renderMaterialSelector();
+            this.renderPullsSelector();
+            this.renderRodsSelector();
+            this.renderMountingSelector();
+            this.renderAddonList();
+            this.loadFormValues();
+        }
+        this.calculate();
+    }
+
+    showClosetPanel() {
+        document.getElementById('closetPanel').style.display = 'block';
+        document.getElementById('customItemPanel').style.display = 'none';
+    }
+
+    showCustomPanel() {
+        document.getElementById('closetPanel').style.display = 'none';
+        document.getElementById('customItemPanel').style.display = 'block';
+    }
+
+    loadCustomItemValues() {
+        const room = this.calculator.getCurrentRoom();
+        document.getElementById('customItemName').value = room.name || '';
+        document.getElementById('customItemDescription').value = room.description || '';
+        document.getElementById('customItemPrice').value = room.price || 0;
+    }
+
+    updateCustomItem(field, value) {
+        this.calculator.updateCustomItem(field, value);
+        if (field === 'name') this.renderRoomTabs();
         this.calculate();
     }
 
@@ -226,9 +290,15 @@ class ClosetEstimatorApp {
         this.calculate();
     }
 
-    selectHardware(hardwareId) {
-        this.calculator.updateCloset('hardwareFinish', hardwareId);
-        this.renderHardwareSelector();
+    selectPulls(id) {
+        this.calculator.updateCloset('pullsHandles', id);
+        this.renderPullsSelector();
+        this.save();
+    }
+
+    selectRods(id) {
+        this.calculator.updateCloset('hangingRods', id);
+        this.renderRodsSelector();
         this.save();
     }
 
@@ -328,7 +398,8 @@ class ClosetEstimatorApp {
                 this.renderClosetTypeSelector();
                 this.renderDepthSelector();
                 this.renderMaterialSelector();
-                this.renderHardwareSelector();
+                this.renderPullsSelector();
+        this.renderRodsSelector();
                 this.renderMountingSelector();
                 this.renderAddonList();
                 this.loadFormValues();
@@ -401,12 +472,15 @@ class ClosetEstimatorApp {
         
         container.innerHTML = rooms.map((room, index) => {
             const roomCalc = calculations.rooms[index];
-            const roomName = room.name || `Room ${index + 1}`;
-            const roomLF = room.closet.linearFeet;
-            
+            const isCustom = room.type === 'custom';
+            const roomName = isCustom
+                ? (room.name || `Item ${index + 1}`)
+                : (room.name || `Room ${index + 1}`);
+            const sub = isCustom ? '✦ custom' : `${room.closet?.linearFeet || 0} LF`;
+
             return `
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: rgba(255,255,255,0.9); border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <span>${roomName} <span style="opacity: 0.6;">(${roomLF} LF)</span></span>
+                    <span>${roomName} <span style="opacity: 0.6;">(${sub})</span></span>
                     <span style="color: var(--gold); font-weight: 600;">$${roomCalc.total.toFixed(2)}</span>
                 </div>
             `;
@@ -423,10 +497,12 @@ class ClosetEstimatorApp {
     }
 
     async generatePDF() {
-        const totalLF = this.calculator.getRooms().reduce((sum, room) => sum + room.closet.linearFeet, 0);
-        
-        if (totalLF === 0) {
-            alert('Please enter linear feet for at least one room before generating quote.');
+        const rooms = this.calculator.getRooms();
+        const hasContent = rooms.some(room =>
+            room.type === 'custom' ? (parseFloat(room.price) > 0) : (parseFloat(room.closet?.linearFeet) > 0)
+        );
+        if (!hasContent) {
+            alert('Please enter linear feet or a custom item price before generating quote.');
             return;
         }
         await this.reportGenerator.generate();
