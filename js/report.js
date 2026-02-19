@@ -175,6 +175,13 @@ class ReportGenerator {
         doc.line(left, y, right, y);
         y += 10;
 
+        // Thank you — gold italic
+        doc.setFont(undefined, 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(...gold);
+        doc.text('Thank you for your business!', left, y);
+        y += 8;
+
         // Subtotal
         doc.setFont(undefined, 'normal');
         doc.setFontSize(9);
