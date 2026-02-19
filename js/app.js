@@ -181,18 +181,16 @@ class ClosetEstimatorApp {
         document.getElementById('clientAddress').value = estimate.client.address || '';
         document.getElementById('clientEmail').value = estimate.client.email || '';
         
-        // Current room specs
-        document.getElementById('roomName').value = currentRoom.name || '';
-        document.getElementById('linearFeet').value = currentRoom.closet.linearFeet || 0;
-        document.getElementById('height').value = currentRoom.closet.height || 96;
+        // Only load closet-specific fields for regular rooms
+        if (currentRoom.type !== 'custom') {
+            document.getElementById('roomName').value = currentRoom.name || '';
+            document.getElementById('linearFeet').value = currentRoom.closet?.linearFeet || 0;
+            document.getElementById('height').value = currentRoom.closet?.height || 96;
+            document.getElementById('drawingNumber').value = currentRoom.closet?.drawingNumber || '';
+            document.getElementById('roomNotes').value = currentRoom.notes || '';
+        }
         
-        // Drawing number
-        document.getElementById('drawingNumber').value = currentRoom.closet?.drawingNumber || '';
-
-        // Room notes
-        document.getElementById('roomNotes').value = currentRoom.notes || '';
-        
-        // Tax and discount
+        // Tax and discount (always)
         document.getElementById('taxRate').value = estimate.taxRate || 0;
         document.getElementById('discountType').value = estimate.discountType || 'percent';
         document.getElementById('discountValue').value = estimate.discountValue || 0;
@@ -395,14 +393,21 @@ class ClosetEstimatorApp {
                 
                 // Re-render everything
                 this.renderRoomTabs();
-                this.renderClosetTypeSelector();
-                this.renderDepthSelector();
-                this.renderMaterialSelector();
-                this.renderPullsSelector();
-        this.renderRodsSelector();
-                this.renderMountingSelector();
-                this.renderAddonList();
-                this.loadFormValues();
+                const firstRoom = this.calculator.getCurrentRoom();
+                if (firstRoom.type === 'custom') {
+                    this.showCustomPanel();
+                    this.loadCustomItemValues();
+                } else {
+                    this.showClosetPanel();
+                    this.renderClosetTypeSelector();
+                    this.renderDepthSelector();
+                    this.renderMaterialSelector();
+                    this.renderPullsSelector();
+                    this.renderRodsSelector();
+                    this.renderMountingSelector();
+                    this.renderAddonList();
+                    this.loadFormValues();
+                }
                 this.updateQuoteInfo();
                 this.calculate();
                 
