@@ -133,7 +133,7 @@ class Auth {
             </style>
             <div class="login-wrap">
                 <div class="login-box">
-                    <img src="/DCQuoting/images/Logo.jpg" alt="Desire Cabinets" class="login-logo">
+                    <img src="/DCQuoting/images/Logo.svg" alt="Desire Cabinets" class="login-logo">
                     <div class="login-rule"></div>
                     <h2 class="login-title">Enter PIN to Continue</h2>
                     <input type="password" id="pinInput" class="login-input"
