@@ -23,6 +23,18 @@ class ReportGenerator {
         const left  = 15;
         const right = 195;
 
+        // $1,974.31 style currency
+        const money = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2, maximumFractionDigits: 2
+        });
+
+        // Split typed text into clean lines: one per line break, leading
+        // "-", "•", "*" removed (the PDF adds its own dash), blanks dropped
+        const cleanLines = (text) => String(text || '')
+            .split(/\r?\n/)
+            .map(l => l.replace(/^\s*[-–—•*·]+\s*/, '').trim())
+            .filter(Boolean);
+
         // ── Fixed header coordinates (no accumulation drift) ──────────
         const LOGO_TOP   = 10;
         const LOGO_H     = 22;
@@ -96,73 +108,132 @@ class ReportGenerator {
         // ── Content starts here ────────────────────────────────────────
         let y = clientBlockBottom + 8;
 
-        // ── Table header ───────────────────────────────────────────────
-        doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(...black);
-        doc.text('ITEM DESCRIPTION', left, y);
-        doc.text('QTY', 130, y, { align: 'right' });
-        doc.text('UNIT PRICE', 160, y, { align: 'right' });
-        doc.text('AMOUNT', right, y, { align: 'right' });
+        // ── Layout constants for the line-item table ───────────────────
+        const QTY_X       = 130;
+        const UNIT_X      = 160;
+        const DESC_W      = 100;   // description column width (stops before QTY)
+        const INDENT      = 3;     // hanging indent for bullet text
+        const TITLE_LINE  = 4.6;   // line height for 9pt titles
+        const LINE        = 4.2;   // line height for 8pt bullets / notes
+        const PAGE_BOTTOM = 262;   // last usable baseline before the footer area
+        const PAGE_TOP    = 15;
 
-        y += 1;
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.5);
-        doc.line(left, y, right, y);
-        y += 6;
+        // Table header — drawn on the first page and repeated on new pages
+        const drawTableHeader = (yy) => {
+            doc.setFontSize(7);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(...black);
+            doc.text('ITEM DESCRIPTION', left, yy);
+            doc.text('QTY', QTY_X, yy, { align: 'right' });
+            doc.text('UNIT PRICE', UNIT_X, yy, { align: 'right' });
+            doc.text('AMOUNT', right, yy, { align: 'right' });
+            yy += 1;
+            doc.setDrawColor(...gold);
+            doc.setLineWidth(0.5);
+            doc.line(left, yy, right, yy);
+            return yy + 6;
+        };
 
-        // ── Rooms ──────────────────────────────────────────────────────
+        const newPageWithHeader = () => {
+            doc.addPage();
+            return drawTableHeader(PAGE_TOP);
+        };
+
+        y = drawTableHeader(y);
+        const firstItemY = y;
+
+        // ── Rooms / line items ─────────────────────────────────────────
         estimate.rooms.forEach((room, index) => {
-            const roomCalc = calculations.rooms[index];
+            const roomCalc    = calculations.rooms[index];
             const description = this.calculator.generateRoomDescription(room);
 
-            // Room title — bold black
+            // 1. Clean details: one bullet per typed line, no doubled dashes
+            const bullets = [];
+            description.details.forEach(d => cleanLines(d).forEach(l => bullets.push(l)));
+            const notes = cleanLines(room.notes);
+
+            // 2. Wrap everything to the description column
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(9);
+            const titleLines = doc.splitTextToSize(description.title, DESC_W);
+
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(8);
+            const bulletRows = [];
+            bullets.forEach(b => {
+                doc.splitTextToSize(b, DESC_W - INDENT).forEach((t, i) => {
+                    bulletRows.push({ text: t, dash: i === 0 });
+                });
+            });
+
+            doc.setFont(undefined, 'italic');
+            const noteRows = [];
+            notes.forEach((n, ni) => {
+                const txt = ni === 0 ? `Note: ${n}` : n;
+                doc.splitTextToSize(txt, DESC_W - INDENT).forEach((t, i) => {
+                    noteRows.push({ text: t, dash: i === 0 });
+                });
+            });
+
+            // 3. Measure; move the whole item to a new page if it won't fit
+            const blockH = titleLines.length * TITLE_LINE + (bulletRows.length + noteRows.length) * LINE;
+            if (y + blockH > PAGE_BOTTOM && y > firstItemY + 1) {
+                y = newPageWithHeader();
+            }
+
+            // Title — bold black
+            const titleY = y;
             doc.setFont(undefined, 'bold');
             doc.setFontSize(9);
             doc.setTextColor(...black);
-            doc.text(description.title, left, y);
+            titleLines.forEach(t => { doc.text(t, left, y); y += TITLE_LINE; });
 
-            // Details as bullet lines
+            // Bullets — normal black, hanging indent
             doc.setFont(undefined, 'normal');
             doc.setFontSize(8);
             doc.setTextColor(...black);
-
-            y += 3.5;
-            description.details.forEach(detail => {
-                if (y > 260) { doc.addPage(); y = 15; }
-                doc.text(`- ${detail}`, left, y);
-                y += 3.5;
+            bulletRows.forEach(r => {
+                if (y > PAGE_BOTTOM) { y = newPageWithHeader(); doc.setFont(undefined, 'normal'); doc.setFontSize(8); doc.setTextColor(...black); }
+                if (r.dash) doc.text('-', left, y);
+                doc.text(r.text, left + INDENT, y);
+                y += LINE;
             });
 
-            // Room notes — italic muted
-            if (room.notes && room.notes.trim()) {
+            // Notes — italic muted, same indent
+            if (noteRows.length) {
                 doc.setFont(undefined, 'italic');
-                doc.setFontSize(8);
                 doc.setTextColor(...muted);
-                const notes = doc.splitTextToSize(`Note: ${room.notes}`, 115);
-                notes.forEach(line => {
-                    if (y > 260) { doc.addPage(); y = 15; }
-                    doc.text(`- ${line}`, left, y);
-                    y += 3.5;
+                noteRows.forEach(r => {
+                    if (y > PAGE_BOTTOM) { y = newPageWithHeader(); doc.setFont(undefined, 'italic'); doc.setFontSize(8); doc.setTextColor(...muted); }
+                    if (r.dash) doc.text('-', left, y);
+                    doc.text(r.text, left + INDENT, y);
+                    y += LINE;
                 });
-                doc.setFont(undefined, 'normal');
-                doc.setTextColor(...black);
             }
 
-            // Price columns — aligned to title row
-            const noteLines = room.notes ? Math.ceil(room.notes.length / 60) : 0;
-            const priceY = y - (3.5 * (description.details.length + noteLines)) - 3.5;
+            // 4. Prices — on the title row
+            doc.setFont(undefined, 'normal');
             doc.setFontSize(9);
             doc.setTextColor(...black);
-            doc.text('1', 130, priceY + 3.5, { align: 'right' });
-            doc.text(`$${roomCalc.total.toFixed(2)}`, 160, priceY + 3.5, { align: 'right' });
+            doc.text('1', QTY_X, titleY, { align: 'right' });
+            doc.text(money(roomCalc.total), UNIT_X, titleY, { align: 'right' });
             doc.setFont(undefined, 'bold');
             doc.setTextColor(...gold);
-            doc.text(`$${roomCalc.total.toFixed(2)}`, right, priceY + 3.5, { align: 'right' });
+            doc.text(money(roomCalc.total), right, titleY, { align: 'right' });
             doc.setTextColor(...black);
             doc.setFont(undefined, 'normal');
 
-            y += 5;
+            // 5. Spacing + light separator between items
+            const lastBaseline = y - LINE;
+            if (index < estimate.rooms.length - 1) {
+                const sepY = lastBaseline + 3.5;
+                doc.setDrawColor(...lineclr);
+                doc.setLineWidth(0.2);
+                doc.line(left, sepY, right, sepY);
+                y = sepY + 6.5;
+            } else {
+                y = lastBaseline;
+            }
         });
 
         // ── Totals ─────────────────────────────────────────────────────
@@ -187,7 +258,7 @@ class ReportGenerator {
         doc.setFontSize(9);
         doc.setTextColor(...black);
         doc.text('SUBTOTAL', 130, y);
-        doc.text(`$${calculations.subtotal.toFixed(2)}`, right, y, { align: 'right' });
+        doc.text(money(calculations.subtotal), right, y, { align: 'right' });
         y += 5;
 
         // Discount
@@ -197,7 +268,7 @@ class ReportGenerator {
                 : 'DISCOUNT';
             doc.setTextColor(...gold);
             doc.text(discountLabel, 130, y);
-            doc.text(`-$${calculations.discount.toFixed(2)}`, right, y, { align: 'right' });
+            doc.text('-' + money(calculations.discount), right, y, { align: 'right' });
             doc.setTextColor(...black);
             y += 5;
         }
@@ -206,7 +277,7 @@ class ReportGenerator {
         if (estimate.taxRate > 0) {
             doc.setTextColor(...black);
             doc.text(`TAX (${estimate.taxRate}%)`, 130, y);
-            doc.text(`$${calculations.tax.toFixed(2)}`, right, y, { align: 'right' });
+            doc.text(money(calculations.tax), right, y, { align: 'right' });
             y += 6;
         } else {
             y += 2;
@@ -224,7 +295,7 @@ class ReportGenerator {
         doc.setTextColor(...black);
         doc.text('TOTAL', 130, y);
         doc.setTextColor(...gold);
-        doc.text(`$${calculations.total.toFixed(2)}`, right, y, { align: 'right' });
+        doc.text(money(calculations.total), right, y, { align: 'right' });
         y += 10;
 
         // Terms — muted small text

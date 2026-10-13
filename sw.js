@@ -1,6 +1,6 @@
-// sw.js — DCQuoting Service Worker v4
+// sw.js — DCQuoting Service Worker v5
 
-var CACHE_NAME = 'dcquoting-v4';
+var CACHE_NAME = 'dcquoting-v5';
 var urlsToCache = [
     '/DCQuoting/',
     '/DCQuoting/index.html',
